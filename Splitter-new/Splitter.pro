@@ -27,19 +27,19 @@ CONFIG += c++11
 
 SOURCES += \
         chartview.cpp \
+        filter.cpp \
         inputdialog.cpp \
         main.cpp \
         mainwindow.cpp \
-        tableview.cpp \
-        myfft.cpp
+        tableview.cpp
 
 
 HEADERS += \
         chartview.h \
+        filter.h \
         inputdialog.h \
         mainwindow.h \
-        tableview.h \
-        myfft.h
+        tableview.h
 
 FORMS += \
         inputdialog.ui \

@@ -43,7 +43,10 @@ void ChartView::setAxisLabel(QString labelX,QString labelY){
 
     m_axisX->setTitleText(labelX);
     m_axisY->setTitleText(labelY);
+}
 
+void ChartView::setTitle(QString str){
+    m_chart->setTitle(str);
 }
 
 void ChartView::addChartData(QVector<QPointF> &data){

@@ -22,7 +22,6 @@ void TableView::initTable(){
 
 void TableView::setTableHeader(int index,QString str){
     model->setHorizontalHeaderItem(index, new QStandardItem(str));
-
 }
 
 
@@ -35,6 +34,12 @@ void TableView::setColumn(QVector<QPointF> &pointVector){
         model->item(i, 1)->setTextAlignment(Qt::AlignCenter);
     }
 }
+
+inline void TableView::setItem(int row_index,int col_index,double item){
+    model->setItem(row_index, col_index, new QStandardItem(QString::number(item)));
+    model->item(row_index, col_index)->setTextAlignment(Qt::AlignCenter);
+}
+
 
 
 

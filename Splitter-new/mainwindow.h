@@ -6,6 +6,8 @@
 #include <chartview.h>
 #include <QTabWidget>
 #include <QSplitter>
+#include <complex>
+#include <vector>
 
 
 namespace Ui {
@@ -13,11 +15,15 @@ class MainWindow;
 }
 
 QT_CHARTS_USE_NAMESPACE
+using namespace std;
+
 
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+
+
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -30,15 +36,12 @@ private slots:
     void medianClicked();
     void averageClicked();
     void gaussClicked();
+    void fourierTransformationClicked();
     void fftClicked();
+    void exampleClicked();
 
 signals:
     void setSpinboxEnable(bool);
-
-
-
-
-
 
 private:
 
@@ -73,9 +76,12 @@ private:
     void medianFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);
     void averageFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);
     void gaussFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);
-    void fftFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);
-
-
+    void FourierTransformation(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);
+    //void zhangFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);    
+    void fft_master(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);
+    void example(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector);
+    int powerOfTwo(int n);
+    void FFT(complex<double> *TD, complex<double> *FD, int r);
 
 
 

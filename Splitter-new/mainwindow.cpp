@@ -7,9 +7,9 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include "inputdialog.h"
-#include "myfft.h"
+#include <QMessageBox>
 
-const double PI=3.1415926;
+double M_PI=3.1415926535;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),    
@@ -26,7 +26,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionMedian_Filter,SIGNAL(triggered()),this,SLOT(medianClicked()));
     connect(ui->actionAverage_Filter,SIGNAL(triggered()),this,SLOT(averageClicked()));
     connect(ui->actionGauss_Filter,SIGNAL(triggered()),this,SLOT(gaussClicked()));
-    connect(ui->actionFourier_Transformation,SIGNAL(triggered()),this,SLOT(fftClicked()));
+    connect(ui->actionFourier_Transformation,SIGNAL(triggered()),this,SLOT(fourierTransformationClicked()));
+    connect(ui->actionFFT,SIGNAL(triggered()),this,SLOT(fftClicked()));
+    connect(ui->actionExample,SIGNAL(triggered()),this,SLOT(exampleClicked()));
 
     setCentralWidget(tabWidget);
     _Read_data();
@@ -58,6 +60,7 @@ void MainWindow::initTable(){
     tableView2->setTableHeader(0,"Time(s)");
     tableView2->setTableHeader(1,"Displacement2(mm)");
 
+
 }
 
 void MainWindow::initSplitter(){
@@ -72,7 +75,7 @@ void MainWindow::initSplitter(){
 void MainWindow::initTabWidget(){
 
     tabWidget->addTab(m_chartview, tr("Post-processed curve"));
-    tabWidget->addTab(splitter, tr("Source data and post-processed data"));
+    tabWidget->addTab(splitter, tr("Configuration"));
 }
 
 
@@ -80,7 +83,8 @@ void MainWindow::initTabWidget(){
 void MainWindow::_Read_data()
 {
     QString name=QFileDialog::getOpenFileName(this,tr("open File"),".",tr("Text Files(*.txt)"));
-    //QString name="‪3.txt";
+    //QString name="D:/newData.csv";
+    QMessageBox::information(this,"File Name:",name);
 
 
 
@@ -127,7 +131,13 @@ void MainWindow::_Read_data()
 
 }
 
+
+
 void MainWindow::Filter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector){
+    if(src_pointVector.isEmpty()){
+        QMessageBox::information(this,"Warning","No source file to process!");
+        return;
+    }
 
 
     InputDialog dlg;
@@ -157,24 +167,35 @@ void MainWindow::Filter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post
 
 
 void MainWindow::medianFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector){
+    if(src_pointVector.isEmpty()){
+        QMessageBox::information(this,"Warning","No source file to process!");
+        return;
+    }
 
 
-    InputDialog dlg;
+    /*InputDialog dlg;
     connect(&dlg,SIGNAL(emitRadius(int,int)),this,SLOT(setRadius(int,int)));
     int nRet=dlg.exec();
     if(nRet == QDialog::Rejected)
-        return;
+        return;*/
 
     post_pointVector.clear();
     //you start coding your filter func here
 
+    radius=3;
+
+
+    double average=0.0;
     typedef double element;//放置窗口并实现窗口的移动
+    element *window=new element[radius];//window[n]
     for (int i = radius/2; i < src_pointVector.size()-radius/2 ; ++i)
     {
         //   取出窗口的元素
-        element *window=new element[radius];//window[n]
-        for (int j = 0; j < radius; ++j){//for (int j = 0; j < n; ++j)
-            window[j] = src_pointVector.at(i - radius/2 + j).y();
+
+        int count=0;
+        for (int j = i - radius/2; j <= i+radius/2; ++j){//for (int j = 0; j < n; ++j)
+            window[count] = src_pointVector.at(j).y();
+            count++;
         }
         //   取出 窗口元素排序
         for (int j = 0; j < radius/2+1; ++j)//for (int j = 0; j < n/2+0.5; ++j)
@@ -191,10 +212,14 @@ void MainWindow::medianFilter(QVector<QPointF> &src_pointVector,QVector<QPointF>
         //   Get result - the middle element
         //QMessageBox::information(this,"Warning",str1);
 
-        post_pointVector.append(QPointF(src_pointVector.at(i - radius/2).x(),window[radius/2]));
-        //post_pointVector.at(i - 2).y() = window[2];
-        delete [] window;
+        average=window[radius/2];
+
+
+        post_pointVector.append(QPointF(i - radius/2,average));
+
     }
+
+    delete [] window;
 
     //you finish coding your filter codes here
 
@@ -214,6 +239,10 @@ void MainWindow::medianFilter(QVector<QPointF> &src_pointVector,QVector<QPointF>
 
 void MainWindow::averageFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector)
 {
+    if(src_pointVector.isEmpty()){
+        QMessageBox::information(this,"Warning","No source file to process!");
+        return;
+    }
 
 
     InputDialog dlg;
@@ -226,26 +255,15 @@ void MainWindow::averageFilter(QVector<QPointF> &src_pointVector,QVector<QPointF
 
     //you start coding your filter func here
 
-    QString str1="";
-
-    typedef double element;//放置窗口并实现窗口的移动
-    for (int i = radius/2; i < src_pointVector.size() - radius/2; ++i)
+    for (int i = radius/2; i < src_pointVector.size()-radius/2; ++i)
     {
-        //   取出窗口的元素
-        element *window=new element[radius];//window[n]
-        for (int j = 0; j < radius; ++j){//for (int j = 0; j < n; ++j)
-            window[j] = src_pointVector.at(i - radius/2 + j).y();
-        }
-        //取出 窗口元素排序
         double sum = 0;
-        for (int j = 0; j <radius; ++j)//for (int j = 0; j < n/2+0.5; ++j)
-        {//寻找当前窗口中的和
-            sum+=window[j];        }
+        for (int j = i-radius/2; j <= i+radius/2; ++j){
+            sum+=src_pointVector.at(j).y();
+        }
 
-        double average  = sum/radius;
-        //   Get result - the middle element
-
-        post_pointVector.append(QPointF(src_pointVector.at(i - radius/2).x(),average ));
+        sum/=radius;
+        post_pointVector.append(QPointF(i - radius/2,sum ));
         //post_pointVector.at(i - 2).y() = window[2];
     }
 
@@ -268,6 +286,10 @@ void MainWindow::averageFilter(QVector<QPointF> &src_pointVector,QVector<QPointF
 
 void MainWindow::gaussFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector)
 {
+    if(src_pointVector.isEmpty()){
+        QMessageBox::information(this,"Warning","No source file to process!");
+        return;
+    }
 
     InputDialog dlg;
     connect(&dlg,SIGNAL(emitRadius(int,double)),this,SLOT(setRadius(int,double)));
@@ -285,8 +307,8 @@ void MainWindow::gaussFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> 
     int size = radius;
     double sigma = m_sigma;
     double* gauss = new double[size];
-    int real_radius = (size - 1) / 2;
-    double MySigma = 2 *PI* sigma*sigma;
+    int real_radius = (size-1)/2;
+    double MySigma = 2*sigma*sigma;
     double value = 0;
 
     for (int i = 0; i < size; i++)
@@ -297,33 +319,31 @@ void MainWindow::gaussFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> 
 
     for (int i = 0; i < size; i++)
     {
-        gauss[i] = gauss[i] / value;
+        gauss[i] /= value;
     }
 
     typedef double element;//放置窗口并实现窗口的移动
-    for (int i = radius/2; i < src_pointVector.size() - radius/2; ++i)
+    element *window=new element[size];
+    double WeightedMean = 0.0;
+    int count=0;
+    for (int i = size/2; i < src_pointVector.size() - size/2; ++i)
     {
-        element *window=new element[radius];
-        for (int j = 0; j < radius; ++j)
+        count=0;
+        WeightedMean = 0.0;
+        for (int j = i-size/2; j <= i+size/2; ++j)
         {
-            window[j] = src_pointVector.at(i - radius/2 + j).y();
+            window[count] = src_pointVector.at(j).y();
+            WeightedMean += gauss[count] * window[count];
+            count++;
         }
 
-        double WeightedMean = 0;
-         for (int  i = 0; i < radius; ++i)
-        {
-             WeightedMean += gauss[i] * window[i];
-        }
-        //   Get result - the weightmean element
-
-        post_pointVector.append(QPointF(src_pointVector.at(i - radius/2).x(),WeightedMean));
+        post_pointVector.append(QPointF(i - radius/2,WeightedMean));
 
         //post_pointVector.at(i - 2).y() = weightmean;
     }
-
-    QMessageBox::information(this,"Warnig","Sigma: "+QString::number(sigma));
-
-
+    
+    delete [] window;
+    delete [] gauss;
 
     //you finish coding your filter codes here
 
@@ -340,7 +360,11 @@ void MainWindow::gaussFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> 
     m_chartview->addChartData(post_pointVector);
 }
 
-void MainWindow::fftFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector){
+void MainWindow::FourierTransformation(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector){
+    if(src_pointVector.isEmpty()){
+        QMessageBox::information(this,"Warning","No source file to process!");
+        return;
+    }
 
     //QMessageBox::information(this,"Warning","Enter fftFilter()!");
     post_pointVector.clear();
@@ -350,6 +374,7 @@ void MainWindow::fftFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &p
     int count=src_pointVector.size();
     double SamplingPeriod=(src_pointVector.at(count-1).x()-src_pointVector.at(0).x())/(count-1);
     double SamplingFreq=1.0/SamplingPeriod;
+
 
     double *Re1=nullptr;//实部
     Re1=new double[count/2+1];
@@ -362,10 +387,10 @@ void MainWindow::fftFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &p
     for(int i=0;i<count/2+1;i++)
             for(int j=0;j<count;j++)
             {
-                Re1[i]+=src_pointVector.at(j).y()*cos(-2*PI*i*j/count);
-                Im1[i]+=src_pointVector.at(j).y()*sin(-2*PI*i*j/count);
+                Re1[i]+=src_pointVector.at(j).y()*cos(-2*M_PI*i*j/count);
+                Im1[i]+=src_pointVector.at(j).y()*sin(-2*M_PI*i*j/count);
             }
-    
+
     //第一个点和最后一个点(count=0和count/2)需要除以N,其余点的模需要除以N/2
     double x=0.0,y=0.0;
     y=sqrt(Re1[0]*Re1[0]+Im1[0]*Im1[0])/count;
@@ -385,8 +410,6 @@ void MainWindow::fftFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &p
     Re1=nullptr;
     Im1=nullptr;
 
-
-
     //set the label of x and y axies of source data
     tableView1->setTableHeader(0,"Time(s)");// x axis label of src data
     tableView1->setTableHeader(1,"Displacement1(mm)");//y axis label of src data
@@ -400,6 +423,160 @@ void MainWindow::fftFilter(QVector<QPointF> &src_pointVector,QVector<QPointF> &p
     m_chartview->addChartData(post_pointVector);
 }
 
+
+void MainWindow::fft_master(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector){
+    if(src_pointVector.isEmpty()){
+        QMessageBox::information(this,"Warning","No source file to process!");
+        return;
+    }
+
+
+    post_pointVector.clear();
+
+    //you start coding your filter func here
+
+    int i=0;
+    double x=0.0,y=0.0;
+    const int count=src_pointVector.size();
+    const int newCount=1 << powerOfTwo(count);
+    double SamplingPeriod=(src_pointVector.at(count-1).x()-src_pointVector.at(0).x())/(count-1);
+    double SamplingFreq=1.0/SamplingPeriod;
+
+    complex<double>* in=new complex<double>[newCount];
+    complex<double>* out=new complex<double>[newCount];
+
+    for (i=0;i<count;i++) {
+        x=src_pointVector.at(i).y();
+        in[i]=complex<double>(x,0.0);
+
+    }
+    i=count;
+    while (i<newCount) {
+        in[i]=complex<double>(0.0,0.0);
+        i++;
+    }
+
+    FFT(in, out, powerOfTwo(count));
+
+    y=sqrt(out[0].real()*out[0].real()+out[0].imag()*out[0].imag())/newCount;
+    post_pointVector.append(QPointF(0.0,y));
+    for (int i=1;i<count/2;i++){
+        x=i*SamplingFreq/newCount;
+        y=sqrt(out[i].real()*out[i].real()+out[i].imag()*out[i].imag())*2.0/newCount;
+        post_pointVector.append(QPointF(x,y));
+    }
+    x=(count/2)*SamplingFreq/newCount;
+    y=sqrt(out[count/2].real()*out[count/2].real()+out[count/2].imag()*out[count/2].imag())/newCount;
+    post_pointVector.append(QPointF(x,y));
+
+    delete [] in;
+    delete [] out;
+
+    QString str = "";
+    QFile file("D:/fft.txt");
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+
+    for (i=0;i<count/2+1;i++) {
+        str+=QString::number(post_pointVector.at(i).x());
+        str+="\t";
+        str+=QString::number(post_pointVector.at(i).y());
+        str+="\n";
+    }
+    file.write(str.toUtf8());
+    file.close();
+
+
+    //set the label of x and y axies of source data
+    tableView1->setTableHeader(0,"Time(s)");// x axis label of src data
+    tableView1->setTableHeader(1,"Displacement1(mm)");//y axis label of src data
+
+    //set the label of x and y axies of resulting data
+    tableView2->setTableHeader(0,"Frequency");
+    tableView2->setTableHeader(1,"Amplitude");
+
+    tableView1->setColumn(src_pointVector);
+    tableView2->setColumn(post_pointVector);
+    m_chartview->addChartData(post_pointVector);
+
+}
+
+void MainWindow::example(QVector<QPointF> &src_pointVector,QVector<QPointF> &post_pointVector){
+
+    post_pointVector.clear();
+    src_pointVector.clear();
+
+    //you start coding your filter func here
+
+    int i=0;
+    double x=0.0,y=0.0;
+    const int L=1000;
+    int newCount=1 << powerOfTwo(L);
+    double Fs=1000;
+    double T=1.0/Fs;
+
+    double time[L];
+    double S[L];
+    complex<double>* in=new complex<double>[newCount];
+    complex<double>* out=new complex<double>[newCount];
+
+    for (i=0;i<L;i++) {
+        time[i]=i*T;
+        //S[i]=0.7*sin(2*M_PI*50*time[i])+sin(2*M_PI*120*time[i]);
+        S[i]=cos(2*M_PI*50*time[i]);
+        in[i]=complex<double>(S[i],0.0);
+        src_pointVector.append(QPointF(time[i],S[i]));
+    }
+    i=L;
+    while (i<newCount) {
+        in[i]=complex<double>(0.0,0.0);
+        src_pointVector.append(QPointF(0.0,0.0));
+        i++;
+    }
+
+    //FourierTransformation(src_pointVector,post_pointVector);
+
+    FFT(in, out, powerOfTwo(L));
+
+    y=sqrt(out[i].real()*out[i].real()+out[i].imag()*out[i].imag())/newCount;
+    post_pointVector.append(QPointF(0.0,y));
+    for (i=1;i<newCount/2;i++){
+        x=i*Fs/newCount;
+        y=sqrt(out[i].real()*out[i].real()+out[i].imag()*out[i].imag())*2.0/newCount;
+        post_pointVector.append(QPointF(x,y));
+    }
+    x=(newCount/2)*Fs/newCount;
+    y=sqrt(out[newCount/2].real()*out[newCount/2].real()+out[newCount/2].imag()*out[newCount/2].imag())/newCount;
+    post_pointVector.append(QPointF(x,y));
+
+
+
+    delete [] in;
+    delete [] out;
+
+    //set the label of x and y axies of source data
+    tableView1->setTableHeader(0,"Time(s)");// x axis label of src data
+    tableView1->setTableHeader(1,"Displacement");//y axis label of src data
+
+    //set the label of x and y axies of resulting data
+    tableView2->setTableHeader(0,"Freq");
+    tableView2->setTableHeader(1,"Amp");
+
+    tableView1->setColumn(src_pointVector);
+    tableView2->setColumn(post_pointVector);
+    m_chartview->addChartData(post_pointVector);
+    m_chartview->setAxisLabel("Freq","Amp");
+
+}
+
+int MainWindow::powerOfTwo(int n) {
+    int i = 0, m = 1;
+    while (m < n) {
+        m <<= 1;
+        ++i;
+    }
+    return i;
+}
+
 void MainWindow::setRadius(int rad,double sig){
     radius=rad;
     m_sigma=sig;
@@ -407,21 +584,107 @@ void MainWindow::setRadius(int rad,double sig){
 
 void MainWindow::medianClicked(){
     medianFilter(source_pointVector,post_pointVector);
-
+    m_chartview->setTitle("Median filter");
 }
 
 
 void MainWindow::averageClicked(){
     averageFilter(source_pointVector,post_pointVector);
-
+    m_chartview->setTitle("Average filter");
 }
 
 
 void MainWindow::gaussClicked(){    
     gaussFilter(source_pointVector,post_pointVector);
+    m_chartview->setTitle("Gauss filter");
+
 
 }
 
+void MainWindow::exampleClicked(){
+    example(source_pointVector,post_pointVector);
+    m_chartview->setTitle("Example");
+}
+
+
+//快速离散傅里叶变换
 void MainWindow::fftClicked(){
-    fftFilter(source_pointVector,post_pointVector);   
+    fft_master(source_pointVector,post_pointVector);
+    m_chartview->setTitle("Fast fourier transformation: single-sided amplitude spectrum");
+}
+
+
+//离散傅里叶变换
+void MainWindow::fourierTransformationClicked(){
+
+    FourierTransformation(source_pointVector,post_pointVector);
+    //fft1(source_pointVector,post_pointVector);
+    m_chartview->setTitle("Naive fourier transformation:single-sided amplitude spectrum");
+}
+
+/***************parameters explanation***************
+*TD:input complex
+*FD:output complex
+*r: N is the power of 2(such as pow in 2^pow)
+*/
+void  MainWindow::FFT(complex<double> *TD, complex<double> *FD, int r)
+{
+
+    int count;         //傅里叶变换点数
+    int    i, j, k;              //循环变量
+    int    bfsize, p;         //中间变量
+    double   angle;        //角度
+    complex<double> *w, *x1, *x2, *x;
+    //计算傅里叶变换点数
+    count = 1 << r;
+
+    //分配运算所需要的存储器
+    w = new complex<double>[count / 2];
+    x1 = new complex<double>[count];
+    x2 = new complex<double>[count];
+
+    //计算加权系数
+    for (i = 0; i < count / 2; i++)
+    {
+        angle = -i*M_PI * 2 / count;
+        w[i] = complex<double>(cos(angle), sin(angle));
+    }
+    //将时域点写入x1
+    memcpy(x1, TD, sizeof(complex<double>)* count);
+
+    //采用蝶形算法惊醒快速傅里叶变换
+    for (k = 0; k < r; k++)
+    {
+        for (j = 0; j < 1 << k; j++)
+        {
+            bfsize = 1 << (r - k);
+            for (i = 0; i < bfsize / 2; i++)
+            {
+                p = j*bfsize;
+                x2[i + p] = x1[i + p] + x1[i + p + bfsize / 2];
+                x2[i + p + bfsize / 2] = (x1[i + p] - x1[i + p + bfsize / 2])*w[i*(1 << k)];
+            }
+        }
+        x = x1;
+        x1 = x2;
+        x2 = x;
+    }
+
+    //重新排序
+    for(j = 0; j < count; j++)
+    {
+        p = 0;
+        for (i = 0; i < r; i++)
+        {
+            if (j&(1 << i))
+            {
+                p += 1 << (r - i - 1);
+            }
+        }
+        FD[j] = x1[p];
+    }
+    //释放内存
+    delete w;
+    delete x1;
+    delete x2;
 }

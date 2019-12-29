@@ -12,11 +12,14 @@ public:
 
     void setTableHeader(int index,QString str);
     void setColumn(QVector<QPointF> &pointVector);
+    inline void setItem(int row_index,int col_index,double item);
+
 
 private:
     QStandardItemModel* model;
 
      void initTable();
+
 };
 
 #endif // TABLEVIEW_H

@@ -1,7 +1,8 @@
 The are two projects ： QtChartWidget and Splitter, which are introduced in detail as follows.
 
 
-#QtChartWidget
+/************************************ QtChartWidget *********************************************/ 
+
 
 Imitating displaying multiple real-time curves in qt, by reading datas from a file.
 
@@ -21,11 +22,29 @@ Beside the table, two radioButton in groupBox help to set the status of checkBox
 
 
 
-#Splitter
 
-The interface is designed as showing the curve of processed data. In the meanwhile, you can see source and result data in two table, 
 
-respectively. 
+
+/************************************ Splitter *********************************************/ 
+
+
+The interface is designed as showing the curve of processed 1d data. In the meanwhile, you can see source and result data in two table, respectively. There are several functions as follows.
+(1)median filter for 1d data;
+
+(2)average filter for 1d data;
+
+(3)gaussian filter for 1d data;
+
+(4)Fouier transformation for 1d data without acceleration;
+
+(5)fast Fouier transformation for 1d data with zero-padding in most situations;
+
+(6)an example to verify the calculated fft result comparing with the result obtained by matlab(the matlab script file(m file) has been uploaded).   
+![](https://github.com/liming467/QtChartWidget/blob/master/actions.png)
+![](https://github.com/liming467/QtChartWidget/blob/master/comparation.png)
+The comparison between the results calculated by matlab(the left) and this program(the right). After checked, the both results are the same.    
+
+
 
 After you run the program, a file dialog will warn you to select a .txt file as source file that will be processed soon. It's suggest that you should select 3.txt in the file of QtChartWidget project, or it might go wrong. Of course, you can modify the codes to satisfy your specific need. 
 

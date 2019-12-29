@@ -19,7 +19,6 @@ public slots:
 
 signals:
     void emitRadius(int a,double b);
-    void emitSigma(int);
 
 private slots:
     void on_pushButton_clicked();

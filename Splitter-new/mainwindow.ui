@@ -25,12 +25,14 @@
    </property>
    <widget class="QMenu" name="menuFilter">
     <property name="title">
-     <string>Filter</string>
+     <string>Signal Processing</string>
     </property>
     <addaction name="actionMedian_Filter"/>
     <addaction name="actionAverage_Filter"/>
     <addaction name="actionGauss_Filter"/>
     <addaction name="actionFourier_Transformation"/>
+    <addaction name="actionFFT"/>
+    <addaction name="actionExample"/>
    </widget>
    <addaction name="menuFilter"/>
   </widget>
@@ -61,6 +63,16 @@
   <action name="actionFourier_Transformation">
    <property name="text">
     <string>Fourier Transformation</string>
+   </property>
+  </action>
+  <action name="actionFFT">
+   <property name="text">
+    <string>FFT</string>
+   </property>
+  </action>
+  <action name="actionExample">
+   <property name="text">
+    <string>Example</string>
    </property>
   </action>
  </widget>

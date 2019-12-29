@@ -16,6 +16,7 @@ public:
 
     void setAxisLabel(QString labelX,QString labelY);
     void addChartData(QVector<QPointF> &data);
+    void setTitle(QString str);
 
 private:
     QChart *m_chart;
